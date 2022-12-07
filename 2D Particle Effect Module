@@ -74,7 +74,6 @@ function pModule.createParticle(
 			pModule.particleList[neededIndex] = tableToInsert
 			return neededIndex
 		else
-			print("No open particle slots :(")	
 			tableToInsert[1]:Destroy()
 		end
 
