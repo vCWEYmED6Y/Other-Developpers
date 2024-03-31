@@ -56,11 +56,15 @@ sGui:SetCore("SendNotification", {
 })
 
 --// Races \--
-local WantedRaces = {
-    "Dullahan",
-    
-}
+local _settings = _G.Settings
+local WantedRaces = _settings.WantedRaces
 Unidentified = "None" -- Dont touch this
+
+sGui:SetCore("SendNotification", {
+    Title = "Race Detector";
+    Text = ("Got Settings! ShardWait is set to ".. _settings.ShardWait.. "s. Player wants the following races: ");
+    Duration = 4
+})
 
 --// Script \--
 local breaker = false 
@@ -115,7 +119,9 @@ end
 task.wait(1)
 assignSeparateThread(function()
     while task.wait() do 
-        updateHotbar:FireServer({["1"] = "\255"})
+        for i = 1,2 do 
+            updateHotbar:FireServer({["1"] = "\255"})
+        end 
         if breaker then 
             sGui:SetCore("SendNotification", {
                 Title = "Race Detector";
@@ -131,7 +137,7 @@ sGui:SetCore("SendNotification", {
     Text = ("Rollback was initiated. Using lineage shard...");
     Duration = 1
 })
-task.wait(.5)
+task.wait(ShardWait)
 inventoryRemote:FireServer("Use", "Lineage Shard", lineageShard)
 task.wait(1)
 local dialogueRemote = p.PlayerGui:WaitForChild("NPCDialogue"):WaitForChild("RemoteEvent")
