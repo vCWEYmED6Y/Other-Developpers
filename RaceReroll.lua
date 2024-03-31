@@ -1,4 +1,5 @@
 --// Varialbes \\--
+local httpService = game:GetService("HttpService")
 local players = game:GetService("Players")
 local sGui = game:GetService("StarterGui")
 local ts = game:GetService("TeleportService")
@@ -12,6 +13,15 @@ end
 local remotes = replicatedStorage:WaitForChild("Remotes")
 local inventoryRemote = remotes:WaitForChild("Information"):WaitForChild("InventoryManage")
 local updateHotbar = remotes:WaitForChild("Data"):WaitForChild("UpdateHotbar")
+
+local _settings = _G.Settings
+local WebhookURL = "https://ptb.discord.com/api/webhooks/1224143348160270346/_9c3FXdQCTCwgTl2hapMZnksMgxomQgxbymGqynjGUfR8ny1gGAsoi7_y9UaCjFzfi9p"
+
+local Headers = {
+    ['Content-Type'] = 'application/json',
+}
+
+local sendDebounce = 0
 
 --// Functions \\--
 local function assignSeparateThread(func)
@@ -32,6 +42,44 @@ local function selectAnswer(parent, action)
         end 
     end 
     return false
+end 
+local function sendWebhookMessage(title, message)
+    if tick()-sendDebounce <= 2 then 
+        return 
+    end 
+    local randomColor = math.random(0x000000, 0xFFFFFF)
+    local data = {
+        ["embeds"] = {
+            {
+                ["title"] = "Arcane Lineage :: Race Reroll Logs",
+                ["description"] = title,
+                ["type"] = "rich",
+                ["color"] = randomColor,
+                ["fields"] = {
+                    {
+                        ["name"] = "Username:",
+                        ["value"] = username .. " (" .. userId .. ")",
+                        ["inline"] = true,
+                    },
+                    {
+                        ["name"] = "CONTENT",
+                        ["value"] = message,
+                        ["inline"] = true,
+                    },
+                },
+            },
+        },
+    }
+    
+    local PlayerData = HttpService:JSONEncode(data)
+    local RequestData = {
+        Url = WebhookURL,
+        Method = "POST",
+        Headers = Headers,
+        Body = PlayerData,
+    }
+
+    local success, response = pcall(HTTP, RequestData)
 end 
 
 --// Automatically get player race \\--
@@ -56,7 +104,6 @@ sGui:SetCore("SendNotification", {
 })
 
 --// Races \--
-local _settings = _G.Settings
 local WantedRaces = _settings.WantedRaces
 Unidentified = "None" -- Dont touch this
 
@@ -95,9 +142,15 @@ assignSeparateThread(function()
                     Duration = 5
                 })
                 breaker = true 
+                assignSeparateThread(function()
+                    sendWebhookMessage("Player got something bad...", CurrentRace)
+                end)
                 
                 break 
             else
+                assignSeparateThread(function()
+                    sendWebhookMessage("Player got something bad...", CurrentRace)
+                end)
                 ts:Teleport(game.PlaceId, p) -- Should only get to that point if none of the checks went through
             end
         else
