@@ -143,7 +143,7 @@ assignSeparateThread(function()
                 })
                 breaker = true 
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something bad...", CurrentRace)
+                    sendWebhookMessage("Player got something good!", CurrentRace)
                 end)
                 
                 break 
