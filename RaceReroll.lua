@@ -113,7 +113,7 @@ sGui:SetCore("SendNotification", {
     Text = ("Got Settings! ShardWait is set to ".. _settings.ShardWait.. "s. Player wants the following races: ".. table.concat(WantedRaces," "));
     Duration = 4
 })
-task.spawn(function()
+assignSeparateThread(function()
     for _, v in pairs(WantedRaces) do 
         sGui:SetCore("SendNotification", {
     Title = "RACES THAT ARE BEING LOGGED";
