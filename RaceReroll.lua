@@ -45,9 +45,10 @@ local function selectAnswer(parent, action)
     return false
 end 
 local function sendWebhookMessage(title, message)
-    if tick()-sendDebounce <= 2 then 
+    if tick()-sendDebounce <= 1 then 
         return 
     end 
+    sendDebounce = tick()
     local randomColor = math.random(0x000000, 0xFFFFFF)
     local data = {
         ["embeds"] = {
