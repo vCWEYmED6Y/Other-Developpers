@@ -117,8 +117,8 @@ assignSeparateThread(function()
     for _, v in pairs(WantedRaces) do 
         sGui:SetCore("SendNotification", {
     Title = "RACES THAT ARE BEING LOGGED";
-    Text = v
-    Duration = 10
+    Text = v;
+    Duration = 10;
         })
     end 
 end)
