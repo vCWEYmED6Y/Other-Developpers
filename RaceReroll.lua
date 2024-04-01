@@ -110,7 +110,7 @@ Unidentified = "None" -- Dont touch this
 
 sGui:SetCore("SendNotification", {
     Title = "Race Detector";
-    Text = ("Got Settings! ShardWait is set to ".. _settings.ShardWait.. "s. Player wants the following races: ");
+    Text = ("Got Settings! ShardWait is set to ".. _settings.ShardWait.. "s. Player wants the following races: ".. table.concat(WantedRaces," "));
     Duration = 4
 })
 
