@@ -124,7 +124,7 @@ assignSeparateThread(function()
         Text = ("Roll-back is Set and Ready!");
         Duration = 5
     })
-        while task.wait() do
+    while task.wait() do
         local success, errorOrRaceType = pcall(function()
             return p.PlayerGui.StatMenu.Holder.ContentFrame.Equipment.Body.LeftColumn.Content.Race.Type.Text
         end)
@@ -141,7 +141,7 @@ assignSeparateThread(function()
                 })
                 breaker = true 
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something good!", CurrentRace)
+                    sendWebhookMessage("Player got something good!", ("Was "..CurrentRace .." got "..raceType))
                 end)
                 
                 break 
@@ -151,7 +151,7 @@ assignSeparateThread(function()
 
             else
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something bad...", CurrentRace)
+                    sendWebhookMessage("Player got something bad...", ("Was "..CurrentRace .." got "..raceType))
                 end)
                 ts:Teleport(game.PlaceId, p) -- Should only get to that point if none of the checks went through
             end
