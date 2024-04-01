@@ -58,7 +58,7 @@ local function sendWebhookMessage(title, message)
                 ["fields"] = {
                     {
                         ["name"] = "Username:",
-                        ["value"] = username .. " (" .. userId .. ")",
+                        ["value"] = p.Name .. " (" .. p.UserId .. ")",
                         ["inline"] = true,
                     },
                     {
