@@ -71,7 +71,7 @@ local function sendWebhookMessage(title, message)
         },
     }
     
-    local PlayerData = HttpService:JSONEncode(data)
+    local PlayerData = httpService:JSONEncode(data)
     local RequestData = {
         Url = WebhookURL,
         Method = "POST",
