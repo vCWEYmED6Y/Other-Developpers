@@ -1,4 +1,5 @@
 --// Varialbes \\--
+local HTTP = syn and syn.request or http_request or request or HttpPost
 local httpService = game:GetService("HttpService")
 local players = game:GetService("Players")
 local sGui = game:GetService("StarterGui")
