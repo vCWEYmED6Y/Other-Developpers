@@ -124,7 +124,7 @@ assignSeparateThread(function()
         Text = ("Roll-back is Set and Ready!");
         Duration = 5
     })
-    while task.wait() do
+        while task.wait() do
         local success, errorOrRaceType = pcall(function()
             return p.PlayerGui.StatMenu.Holder.ContentFrame.Equipment.Body.LeftColumn.Content.Race.Type.Text
         end)
@@ -133,11 +133,7 @@ assignSeparateThread(function()
             local raceType = errorOrRaceType
             local isWanted = WantedRaces[raceType]
 
-            if raceType == Unidentified then -- Race is "None"
-                 
-            elseif raceType == CurrentRace then -- Race is your current race
-                 
-            elseif isWanted then -- You got the race you wanted! yippie!
+            if isWanted then -- Race is "None"
                 sGui:SetCore("SendNotification", {
                     Title = "Race Detector";
                     Text = ("Got race: ".. CurrentRace);
@@ -149,6 +145,10 @@ assignSeparateThread(function()
                 end)
                 
                 break 
+            elseif raceType == CurrentRace then -- Race is your current race
+                 
+            elseif raceType == Unidentified then -- You got the race you wanted! yippie!
+
             else
                 assignSeparateThread(function()
                     sendWebhookMessage("Player got something bad...", CurrentRace)
