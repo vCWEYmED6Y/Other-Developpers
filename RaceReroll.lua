@@ -44,6 +44,14 @@ local function selectAnswer(parent, action)
     end 
     return false
 end 
+local function forceCheck(from, current)
+    for _, v in pairs(from) do 
+        if current == v then 
+            return true 
+        end 
+    end 
+    return false
+end 
 local function sendWebhookMessage(title, message, color)
     if tick()-sendDebounce <= 1 then 
         return 
@@ -113,15 +121,11 @@ sGui:SetCore("SendNotification", {
     Text = ("Got Settings! ShardWait is set to ".. _settings.ShardWait.. "s. Player wants the following races: ".. table.concat(WantedRaces," "));
     Duration = 4
 })
-assignSeparateThread(function()
-    for _, v in pairs(WantedRaces) do 
-        sGui:SetCore("SendNotification", {
-    Title = "RACES THAT ARE BEING LOGGED";
-    Text = v;
-    Duration = 10;
-        })
-    end 
-end)
+sGui:SetCore("SendNotification", {
+    Title = "Race Detector";
+    Text = ("Player wants the following races: ".. table.concat(WantedRaces," "));
+    Duration = 10
+})
 
 --// Script \--
 local breaker = false 
@@ -139,9 +143,10 @@ assignSeparateThread(function()
 
         if success then
             local raceType = errorOrRaceType
-            local isWanted = WantedRaces[raceType]
+            local isWanted = WantedRaces[raceType] ~= nil 
+            local forceCheck = forceCheck(WantedRaces, raceType)
 
-            if isWanted or raceType == "Dullahan" then -- Race is "None"
+            if raceType == "Dullahan" or forceCheck or isWanted then
                 sGui:SetCore("SendNotification", {
                     Title = "Race Detector";
                     Text = ("Got race: ".. CurrentRace);
@@ -154,6 +159,7 @@ assignSeparateThread(function()
                 
                 return 
             end
+
             if raceType == CurrentRace then -- Race is your current race
                  
             elseif raceType == Unidentified then -- You got the race you wanted! yippie!
