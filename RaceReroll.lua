@@ -44,19 +44,18 @@ local function selectAnswer(parent, action)
     end 
     return false
 end 
-local function sendWebhookMessage(title, message)
+local function sendWebhookMessage(title, message, color)
     if tick()-sendDebounce <= 1 then 
         return 
     end 
     sendDebounce = tick()
-    local randomColor = math.random(0x000000, 0xFFFFFF)
     local data = {
         ["embeds"] = {
             {
                 ["title"] = "Arcane Lineage :: Race Reroll Logs",
                 ["description"] = title,
                 ["type"] = "rich",
-                ["color"] = randomColor,
+                ["color"] = 16711680,
                 ["fields"] = {
                     {
                         ["name"] = "Username:",
@@ -133,7 +132,7 @@ assignSeparateThread(function()
             local raceType = errorOrRaceType
             local isWanted = WantedRaces[raceType]
 
-            if isWanted then -- Race is "None"
+            if isWanted or raceType == "Dullahan" then -- Race is "None"
                 sGui:SetCore("SendNotification", {
                     Title = "Race Detector";
                     Text = ("Got race: ".. CurrentRace);
@@ -141,20 +140,21 @@ assignSeparateThread(function()
                 })
                 breaker = true 
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something good!", ("Was "..CurrentRace .." got "..raceType))
+                    sendWebhookMessage("Player got something good!", ("Was "..CurrentRace .." | Got "..raceType), 32768)
                 end)
                 
-                break 
-            elseif raceType == CurrentRace then -- Race is your current race
+                return 
+            end
+            if raceType == CurrentRace then -- Race is your current race
                  
             elseif raceType == Unidentified then -- You got the race you wanted! yippie!
 
             else
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something bad...", ("Was "..CurrentRace .." got "..raceType))
+                    sendWebhookMessage("Player got something bad...", ("Was "..CurrentRace .." | Got "..raceType), 16711680)
                 end)
                 ts:Teleport(game.PlaceId, p) -- Should only get to that point if none of the checks went through
-                
+
                 return
             end
         else
