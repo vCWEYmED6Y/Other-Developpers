@@ -168,7 +168,9 @@ assignSeparateThread(function()
                 assignSeparateThread(function()
                     sendWebhookMessage("Player got something bad...", ("Was "..CurrentRace .." | Got "..raceType), 16711680)
                 end)
-                p:Kick()
+                delay(.25, function()
+                    p:Kick()
+                end)
                 ts:Teleport(game.PlaceId, p) -- Should only get to that point if none of the checks went through
 
                 return
