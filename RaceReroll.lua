@@ -210,7 +210,7 @@ sGui:SetCore("SendNotification", {
     Text = ("Rollback was initiated. Using lineage shard...");
     Duration = 1
 })
-task.wait(ShardWait)
+task.wait(1.5+ShardWait)
 inventoryRemote:FireServer("Use", "Lineage Shard", lineageShard)
 task.wait(1)
 local dialogueRemote = p.PlayerGui:WaitForChild("NPCDialogue"):WaitForChild("RemoteEvent")
