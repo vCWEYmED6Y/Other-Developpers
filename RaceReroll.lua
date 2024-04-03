@@ -63,7 +63,7 @@ local function sendWebhookMessage(title, message, color)
                 ["title"] = "Arcane Lineage :: Race Reroll Logs",
                 ["description"] = title,
                 ["type"] = "rich",
-                ["color"] = 16711680,
+                ["color"] = color,
                 ["fields"] = {
                     {
                         ["name"] = "Username:",
