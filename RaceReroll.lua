@@ -72,7 +72,7 @@ local function sendWebhookMessage(title, message, color)
                     },
                     {
                         ["name"] = "Settings:",
-                        ["value"] = "Wait time: *".. _settings.ShardWait .. "s*\nPlayer wanted: *".. table.concat(_settings.WantedRaces, "* *").. "*",
+                        ["value"] = "*Wait time*: ".. _settings.ShardWait .. "s\n*Player wanted*: ``".. table.concat(_settings.WantedRaces, " ").."``",
                         ["inline"] = false,
                     },
                 },
