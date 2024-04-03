@@ -72,7 +72,7 @@ local function sendWebhookMessage(title, message, color)
                     },
                     {
                         ["name"] = "Settings:",
-                        ["value"] = "Wait time: ".. _settings.ShardWait .. "s\nPlayer wanted: *".. table.concat(_settings.WantedRaces, "* *").. "*",
+                        ["value"] = "Wait time: *".. _settings.ShardWait .. "s*\nPlayer wanted: *".. table.concat(_settings.WantedRaces, "* *").. "*",
                         ["inline"] = false,
                     },
                 },
@@ -154,7 +154,7 @@ assignSeparateThread(function()
                 })
                 breaker = true 
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something good!", ("was "..CurrentRace .." | Got **"..raceType.."**"), tonumber(0x008000))
+                    sendWebhookMessage("Player got something good!", ("was "..CurrentRace ..", got **"..raceType.."**"), tonumber(0x008000))
                 end)
                 
                 return 
@@ -166,7 +166,7 @@ assignSeparateThread(function()
 
             else
                 assignSeparateThread(function()
-                    sendWebhookMessage("Player got something bad...", ("was "..CurrentRace .." | Got **"..raceType.."**"), tonumber(0xFF0000))
+                    sendWebhookMessage("Player got something bad...", ("was "..CurrentRace ..", got **"..raceType.."**"), tonumber(0xFF0000))
                 end)
                 p:Kick()
                 ts:Teleport(game.PlaceId, p) -- Should only get to that point if none of the checks went through
