@@ -67,13 +67,18 @@ local function sendWebhookMessage(title, message, color)
                 ["fields"] = {
                     {
                         ["name"] = "Username:",
-                        ["value"] = p.Name .. " (" .. p.UserId .. ")",
+                        ["value"] = "["..p.Name .. "](https://www.roblox.com/users/"..p.UserId.."/profile)",
                         ["inline"] = true,
                     },
                     {
-                        ["name"] = "CONTENT",
+                        ["name"] = "",
                         ["value"] = message,
                         ["inline"] = true,
+                    },
+                    {
+                        ["name"] = "Settings:",
+                        ["value"] = "Wait time: ".. _settings.ShardWait .. "\nPlayer wanted: ".. table.concat(_settings.WantedRaces, " "),
+                        ["inline"] = false,
                     },
                 },
             },
