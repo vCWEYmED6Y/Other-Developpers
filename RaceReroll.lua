@@ -194,6 +194,7 @@ assignSeparateThread(function()
     while task.wait() do 
         for i = 1,3 do 
             updateHotbar:FireServer({["1"] = "\255"})
+            updateHotbar:FireServer({["\255"] = true})
         end 
         if breaker then 
             sGui:SetCore("SendNotification", {
