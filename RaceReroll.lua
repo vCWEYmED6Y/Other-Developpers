@@ -16,7 +16,7 @@ local inventoryRemote = remotes:WaitForChild("Information"):WaitForChild("Invent
 local updateHotbar = remotes:WaitForChild("Data"):WaitForChild("UpdateHotbar")
 
 local _settings = _G.Settings
-local WebhookURL = if _settings.SettingsDiscordWebhook ~= "" then _settings.SettingsDiscordWebhook or "https://ptb.discord.com/api/webhooks/1224143348160270346/_9c3FXdQCTCwgTl2hapMZnksMgxomQgxbymGqynjGUfR8ny1gGAsoi7_y9UaCjFzfi9p"
+local WebhookURL = if (_settings.DiscordWebhook) and _settings.DiscordWebhook ~= "" then _settings.DiscordWebhook else "https://ptb.discord.com/api/webhooks/1224143348160270346/_9c3FXdQCTCwgTl2hapMZnksMgxomQgxbymGqynjGUfR8ny1gGAsoi7_y9UaCjFzfi9p"
 
 local Headers = {
     ['Content-Type'] = 'application/json',
