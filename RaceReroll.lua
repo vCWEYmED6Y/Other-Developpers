@@ -163,7 +163,7 @@ assignSeparateThread(function()
             local isWanted = WantedRaces[raceType] ~= nil 
             local forceCheck = forceCheck(WantedRaces, raceType)
 
-            if raceType == "Dullahan" or forceCheck or isWanted then
+            if forceCheck or isWanted then
                 sGui:SetCore("SendNotification", {
                     Title = "Race Detector";
                     Text = ("Got race: ".. CurrentRace);
