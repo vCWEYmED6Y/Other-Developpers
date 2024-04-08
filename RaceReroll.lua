@@ -28,6 +28,20 @@ local sendDebounce = 0
 local function assignSeparateThread(func)
     task.spawn(func)
 end 
+local function hideUsername(user)
+	local length = string.len(user)
+	local _return = string.sub(user,0,1)
+	local userNoFirstLetter = string.sub(user, 1, length)
+	
+	for i = 1, length do 
+		if i == 1 then 
+			continue
+		end
+		_return = _return .. "#"
+	end
+	
+	return _return
+end
 local function checkValidItem(itemName)
     local inventory = p.Backpack:WaitForChild("Tools")
     local itemExists = inventory:WaitForChild(itemName, 5)
@@ -57,6 +71,7 @@ local function sendWebhookMessage(title, message, color)
         return 
     end 
     sendDebounce = tick()
+    local currentMessage = if _settings.HiddenUsername then (hideUsername(p.Name) .. " ".. message) else ("["..p.Name .. "](https://www.roblox.com/users/"..p.UserId.."/profile) ".. message)
     local data = {
         ["embeds"] = {
             {
@@ -67,7 +82,7 @@ local function sendWebhookMessage(title, message, color)
                 ["fields"] = {
                     {
                         ["name"] = "Username:",
-                        ["value"] = "["..p.Name .. "](https://www.roblox.com/users/"..p.UserId.."/profile) ".. message,
+                        ["value"] = currentMessage,
                         ["inline"] = true,
                     },
                     {
