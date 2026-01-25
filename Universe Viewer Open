@@ -1,0 +1,616 @@
+--[[
+Made by frog
+      Universe Viewer V2 allows you to join any roblox experience linked to your current experience's universe.
+      Left Click = Teleport to experience with timer (Will abort if failed or if teleportAbortDelay has been reached (Teleport may still work once delay is reached.))
+you cannot teleport to another experience while teleport timer hasn't reached teleportAbortDelay or if teleport hasn't failed.
+
+      Right Click = Copy experience ID to your clipboard, works when you are teleporting and shows experience's ID for 1.5s.
+      
+      Values you can edit: Every (avoid editing some unless you know what you are doing)
+      Values useful to edit: 
+          colors (don't remove/edit default ones), 
+          uiColor (default = Pink),
+          teleportAbortDelay (default = math.huge),
+          particlesEnabled (default = true),
+          particleAmount (default = 20),
+          particleSize (default = UDim2.new(0,10,0,10),
+	  getrenv().GameInfos = true -- TOGGLE TO TRUE TO VIEW GAME INFOS, [!!] WARNING [!!] LOTS OF DATA LEAKS + Longer Load (only once dw)
+
+
+/// LOADSTRING: ///
+
+getrenv().GameInfos = true 
+getrenv().Debug = true 
+getrenv().MobileFix = true
+local link = "https://raw.githubusercontent.com/vCWEYmED6Y/Universal/main/Universe%20Viewer%20V2.lua"
+
+local output, results = pcall(function()
+	loadstring(game:HttpGet(link))()
+end)
+
+if not output then 
+		print(results)
+
+		if getrenv().ScreenGui then getrenv().ScreenGui:Destroy() end
+
+		getrenv().ScreenGui = nil 
+		getrenv().UniverseViewerDestroy = nil
+		getrenv().UniverseViewerExecuted = false
+
+end 
+
+///   ///
+]]--
+
+
+-- Anti "Double Execute"
+if getrenv().UniverseViewerExecuted then 
+
+	return false
+end 
+getrenv().UniverseViewerExecuted = true 
+
+-- Variables
+local colors = {
+	White = Color3.fromRGB(255,255,255),
+	Black = Color3.fromRGB(0,0,0),
+	Red = Color3.fromRGB(255,0,0),
+	Green = Color3.fromRGB(0,255,0),
+	Blue = Color3.fromRGB(0,0,255),
+	Pink = Color3.fromRGB(255, 85, 255),
+	DarkGrey = Color3.fromRGB(34,34,34),
+	LightGrey = Color3.fromRGB(190,190,190),
+
+}; local uiColor = colors.Pink
+local guiParent = game.CoreGui
+local teleportAbortDelay = math.huge
+local particlesEnabled, particleAmount, particleSize = false, 20, UDim2.new(0,10,0,10) -- you don't have to edit particleAmount if particlesEnabled is set to true.
+local particleModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/vCWEYmED6Y/Other-Developpers/main/2D%20Particle%20Effect%20Module", true))()
+
+getrenv().GameInfos = true 
+getrenv().Debug = true 
+
+-- Consts
+local defaultValues = {
+	["Enabled"] = false, 
+	["Name"] = "",
+	["ResetOnSpawn"] = false,
+};
+local defaultParticleProperties = {
+	["ZIndex"] = 99999999,
+	["Size"] = particleSize,
+	["AnchorPoint"] = Vector2.new(.5,.5),
+	["SizeConstraint"] = Enum.SizeConstraint.RelativeYY, 
+	["BorderSizePixel"] = 0, 
+	["Image"] = "http://www.roblox.com/asset/?id=184442073",
+	["BackgroundTransparency"] = 1,
+	["ImageTransparency"] = .5
+};local blacklistedValues = {"Parent", "ZIndexBehavior", "DisplayOrder", "Archivable"}
+local oldNames, lastClicked, currentText, index, teleportFailure, isTeleporting, addedValue = {}, {}, {}, {}, {}, false, 0
+local stringColor = tostring(math.floor(uiColor.R*255)) .. "," ..tostring(math.floor(uiColor.G*255)) .. "," ..math.floor(tostring(uiColor.B*255))
+local left = true
+local gameDataStore = {}
+lastClicked["ClipBoard"] = {}
+lastClicked["Teleport"] = {}
+
+-- Constants
+local tpService = game:GetService("TeleportService")
+local hService = game:GetService("HttpService")
+local aService = game:GetService("AssetService")
+local tService = game:GetService("TweenService")
+local gService = game:GetService("GroupService")
+local pages = aService:GetGamePlacesAsync()
+
+-- Necessary Func
+local function _print(...) 	if getrenv().Debug then  		print(...) 	end end
+local function isProperty(instance, property)	local x = pcall(function()		return instance[property]	end)		return x end
+local function isInstance(className)	local x = pcall(function()		return Instance.new(className)	end)		return x end
+local function editUi(ui, parent,values)	if  type(values) ~= "table" then _print("\"values\" has to be a table.") return end	ui.Parent = parent	for i, v in pairs (values) do 		if not isProperty(ui, i) and not table.find(i, blacklistedValues) then _print("Could not set ".. tostring(i) .. " to " .. tostring(v)) continue end				ui[i] = v	end end
+local function getPlaceDetails(placeId)	local link = "https://www.roproxy.com/places/api-get-details?assetId="..placeId	local request = hService:JSONDecode(game:HttpGetAsync(link))		return request end
+local function getGroupInfos(groupID)	return gService:GetGroupInfoAsync(groupID) end --[[ EmblemUrl, Id, Name, Owner (table: Id, Name), Roles (table)]]
+
+-- UI Func
+local function screenGui()	if not getrenv().ScreenGui then 		local newGui = Instance.new("ScreenGui", guiParent)		for i,v in pairs (defaultValues) do 			if not isProperty(newGui, i) and not table.find(i, blacklistedValues) then _print("Could not set ".. tostring(i) .. " to " .. tostring(v)) continue end						newGui[i] = v 		end				getrenv().ScreenGui = newGui				return newGui	end 		return getrenv().ScreenGui end
+local function frame(parent, values)	if  type(values) ~= "table" then _print("\"values\" has to be a table.") return end	local newFrame = Instance.new("Frame", parent)		for i, v in pairs (values) do 		if not isProperty(newFrame, i) and not table.find(i, blacklistedValues) then _print("Could not set ".. tostring(i) .. " to " .. tostring(v)) continue end 				newFrame[i] = v 	end		return newFrame end
+local function other(className, parent, values)	if not isInstance(className) then _print("Could not create ".. tostring(className)) return end if  type(values) ~= "table" then _print("\"values\" has to be a table.") return end	local newOther = Instance.new(className, parent)		for i, v in pairs (values) do 		if not isProperty(newOther, i) and not table.find(i, blacklistedValues) then _print("Could not set ".. tostring(i) .. " to " .. tostring(v)) continue end 				newOther[i] = v 	end		return newOther end 
+-- UI Func > Effects
+local function newParticle(color)	if typeof(color) ~= "Color3" then _print("\"color\" has to be a Color3 userdata.") return false end		local image = Instance.new("ImageLabel") other("UICorner", image, {CornerRadius = UDim.new(0,3)})		for i, v in pairs (defaultParticleProperties) do 		if not isProperty(image, i) then 			_print("Could not set ".. tostring(i) .. " to " .. tostring(v))						continue		end				image[i] = v	end	image.ImageColor3 = color	image.Rotation = math.random(0,90)	return image end
+
+
+-- UI Handler
+local scGui = screenGui()
+local frameHandler = frame(scGui, { --ScreenGui.Handler
+	Size = UDim2.new(.2,0,1,0),
+	Position = UDim2.new(0.005,0,0,0),
+	BackgroundTransparency = 1, 
+	Name = "Handler"
+})
+local backgroundGlow = other("ImageLabel", frameHandler, {
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Position = UDim2.new(-.069, 0, .054,0),
+	Size = UDim2.new(1.134,0,.89,0), 
+	Image = "http://www.roblox.com/asset/?id=10272313271",
+	ImageColor3 = uiColor,
+})
+
+
+
+local closeFrame = frame(frameHandler, {
+	Size = UDim2.new(1.2,0,.05,0),
+	Position = UDim2.new(0,0,0.1,0),
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Name = "CloseFrame"
+})
+local closeFrameSizeConstraint = other("UISizeConstraint", closeFrame, {
+	MinSize = Vector2.new(180,0)
+})
+local closeButton = other("TextButton", closeFrame, {
+	BackgroundTransparency = 1 ,
+	BorderSizePixel = 0, 
+	Position = UDim2.new(.65,0,0,0),
+	Size = UDim2.new(.148,0,1,0),
+	Text = "<b>X</b>",
+	TextTransparency = 1,
+	Font = Enum.Font.Cartoon,
+	TextColor3 = uiColor, 
+	RichText = true,
+	TextScaled = true,
+	Rotation = 95*3,
+	Name = "Button",
+})
+local closeButtonSizeConstraint = other("UISizeConstraint", closeButton, {
+	MinSize = Vector2.new(42,42)
+})
+
+
+
+local frameListBackground = frame(frameHandler, {
+	Size = UDim2.new(1,0,.8,0),
+	Position = UDim2.new(0,0,0.1,0),
+	BackgroundColor3 = colors.DarkGrey,
+	BackgroundTransparency = .4,
+	Name = "Background",
+	ClipsDescendants = true,
+})
+local backgroundSizeConstraint = other("UISizeConstraint", frameListBackground, {
+	MinSize = Vector2.new(150,300)
+})
+local backgroundCorner = other("UICorner", frameListBackground, {
+	CornerRadius = UDim.new(0,4)
+})
+local backgroundStroke = other("UIStroke", frameListBackground, {
+	Color = uiColor,
+	Thickness = 2,
+	Transparency = .3
+})
+local backgroundGradient = other("UIGradient", frameListBackground, {
+	Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, colors.LightGrey),
+		ColorSequenceKeypoint.new(.5, colors.White),
+		ColorSequenceKeypoint.new(1, colors.LightGrey)
+	}),
+	Rotation = 45,
+})
+
+
+
+local frameInfoHandler = frameListBackground:Clone()
+editUi(frameInfoHandler, frameHandler, {
+	BackgroundTransparency = 0,
+	Position = UDim2.new(1.22,0,.1,0),
+	Size = UDim2.new(1.5,0,.355,0),
+	Name = "InfoFrame",
+	ClipsDescendants = false,
+	Visible = false
+})
+local infoGlow = backgroundGlow:Clone()
+editUi(infoGlow, frameInfoHandler, {
+	Position = UDim2.new(-.05,0,-.06,0),
+	Size = UDim2.new(1.105,0,1.12,0),
+})
+local frameInfoOverHead = frame(frameInfoHandler, { -- IMPORTANT
+	BackgroundColor3 = colors.DarkGrey, 
+	BackgroundTransparency = .8,
+	Position = UDim2.new(.1,0,.02,0),
+	Size = UDim2.new(.8,0,.1,0),
+	Name = "OverHead",
+})
+local infoOverHeadUICorner = other("UICorner", frameInfoOverHead, {
+	CornerRadius = UDim.new(0,4)
+})
+local infoOverHeadUIStroke = other("UIStroke", frameInfoOverHead, {
+	Thickness = 2, 
+	Transparency = 0.3
+})
+local titleInfoOverHead = other("TextLabel", frameInfoOverHead, {
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0, 
+	Position = UDim2.new(0,0,0.15,0),
+	Size = UDim2.new(1,0,.7,0), 
+	Font = Enum.Font.SciFi, 
+	RichText = true, 
+	Text = "GAME NAME(bold)",
+	Name = "Title",
+	TextColor3 = uiColor, 
+	TextScaled = true,
+	TextTransparency = .3
+})
+local frameInfoDesc = frame(frameInfoHandler, {
+	BackgroundColor3 = colors.DarkGrey, 
+	BackgroundTransparency = .8,
+	Position = UDim2.new(.025,0,.16,0),
+	Size = UDim2.new(.95,0,.8,0), 
+	Name = "Description",
+})
+local infoDescUICorner = other("UICorner", frameInfoDesc, {
+	CornerRadius = UDim.new(0,4)
+})
+local infoDescUIStroke = other("UIStroke", frameInfoDesc, {
+	Thickness = 2, 
+	Transparency = 0.3
+})
+local frameDescCreator = frame(frameInfoDesc,{
+	BackgroundColor3 = colors.DarkGrey, 
+	BackgroundTransparency = .8,
+	Position = UDim2.new(.7,0,0,0),
+	Size = UDim2.new(.3,0,.4,0),
+	Name = "CreatorFrame",
+})
+local creatorDescUICorner = other("UICorner", frameDescCreator, {
+	CornerRadius = UDim.new(0,20)
+})
+local creatorDescUIStroke = other("UIStroke", frameDescCreator, {
+	Thickness = 2, 
+	Transparency = 0.3
+})
+local playerImage = other("ImageLabel", frameDescCreator, { -- IMPORTANT
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1,0,1,0), 
+	Image = "",
+	Name = "PlayerImage",
+})
+local playerImageCorner = other("UICorner", playerImage, {
+	CornerRadius = UDim.new(0,25)
+})
+local playerTitle = other("TextLabel", frameInfoDesc,{
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Position = UDim2.new(0,0,.02,0), 
+	Size = UDim2.new(.697,0,.088,0), 
+	Font = Enum.Font.SciFi, 
+	Text = "<b>[CREATOR INFOS]</b>",
+	TextColor3 = uiColor,
+	TextTransparency = .3, 
+	RichText = true, 
+	TextScaled = true, 
+	Name = "PlayerTitle",
+})
+local playerDescription = other("TextLabel", frameInfoDesc, {
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Position = UDim2.new(0.015,0,.11,0), 
+	Size = UDim2.new(.679,0,.297,0), 
+	Font = Enum.Font.SciFi, 
+	Text = "NOT LOADED YET",
+	TextColor3 = colors.White,
+	TextTransparency = .3, 
+	RichText = true, 
+	TextScaled = true, 
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	Name = "PlayerDesc",
+})
+local gameTitle = other("TextLabel", frameInfoDesc, {
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Position = UDim2.new(0,0,.41,0), 
+	Size = UDim2.new(1,0,.088,0), 
+	Font = Enum.Font.SciFi, 
+	Text = "<b>[GAME INFOS]</b>",
+	TextColor3 = uiColor,
+	TextTransparency = .3, 
+	RichText = true, 
+	TextScaled = true, 
+	Name = "GameTitle",
+})
+local gameDescription = other("TextLabel", frameInfoDesc, {
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Position = UDim2.new(0.015,0,.5,0), 
+	Size = UDim2.new(.985,0,.502,0), 
+	Font = Enum.Font.SciFi, 
+	Text = "NOT LOADED YET",
+	TextColor3 = colors.White,
+	TextTransparency = .3, 
+	RichText = true, 
+	TextScaled = true, 
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	Name = "GameDesc",
+})
+
+
+
+local frameListHandler = other("ScrollingFrame",frameListBackground, {
+	Size = UDim2.new(.95,0,.78,0),
+	Position = UDim2.new(0.024,0,0.04,0),
+	BackgroundColor3 = colors.White,
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	Name = "List",
+	ClipsDescendants = false,
+	CanvasSize = UDim2.new(0,0,0,0),
+	ScrollBarThickness = 0,
+})
+local listlistLayout = other("UIListLayout", frameListHandler, {
+	Padding = UDim.new(.01,0),
+	SortOrder = Enum.SortOrder.Name,
+})
+
+
+
+local frameHandlerExample = frame(nil, {
+	Size = UDim2.new(1,0,.08,0),
+	BackgroundTransparency = 1, 
+	BorderSizePixel = 0,
+	Name = "Example",
+})
+local frameBackgroundExample = frame(frameHandlerExample, {
+	BackgroundColor3 = colors.DarkGrey,
+	BackgroundTransparency = .8,
+	Size = UDim2.new(1,0,1,0), 
+	Name = "Background"
+})
+local exampleCorner = other("UICorner", frameBackgroundExample, {
+	CornerRadius = UDim.new(0,3)
+})
+local exampleStroke = other("UIStroke", frameBackgroundExample, {
+	ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+	Color = Color3.fromRGB(10,10,10), 
+	Thickness = 2, 
+	Transparency = .2, 
+})
+local frameHover = frame(frameHandlerExample, {
+	BackgroundColor3 = colors.White,
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1,0,1,0),
+	ZIndex = 99,
+	Name = "Hover",
+})
+local hoverCorner = other("UICorner", frameHover, {
+	CornerRadius = UDim.new(0,3),
+})
+local exampleButton = other("TextButton", frameHandlerExample, {
+	Size = UDim2.new(1,0,.6,0),
+	Position = UDim2.new(0,0,.2,0),
+	TextColor3 = colors.White,
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0, 
+	ZIndex = 9999,
+	Font = Enum.Font.SciFi,
+	RichText = true,
+	TextScaled = true,
+	Text = "",
+	TextTransparency = .3,
+	Name = "Button"
+})
+local exampleSizeConstraint = other("UISizeConstraint", frameHandlerExample, {
+	MinSize = Vector2.new(0,40)
+})
+
+
+
+while true do 
+	for i, v in pairs (pages:GetCurrentPage()) do
+		local currentNumber = addedValue+i
+		local exampleCopy = frameHandlerExample:Clone()
+		exampleCopy.Parent = frameListHandler
+		exampleCopy.Name = currentNumber
+		if v.PlaceId == game.PlaceId then 
+			exampleCopy.Button.Text = "<font color = 'rgb("..stringColor..")'>[</font><font color = 'rgb(255,255,255)'>".. v.Name.."</font><font color = 'rgb("..stringColor..")'>]</font>" -- Current Game
+			oldNames[currentNumber] = "<font color = 'rgb("..stringColor..")'>[</font><font color = 'rgb(255,255,255)'>".. v.Name.."</font><font color = 'rgb("..stringColor..")'>]</font>"
+			currentText[currentNumber] = oldNames[currentNumber]
+		else
+			exampleCopy.Button.Text = "<font color = 'rgb(255,255,255)'>".. v.Name.."</font>" -- Not Game
+			oldNames[currentNumber] = "<font color = 'rgb(255,255,255)'>".. v.Name.."</font>"
+			currentText[currentNumber] = oldNames[currentNumber]
+		end
+		exampleCopy.MouseEnter:Connect(function()
+			tService:Create(exampleCopy.Hover, TweenInfo.new(.2, Enum.EasingStyle.Quad), {BackgroundTransparency = .89}):Play()
+		end)
+
+		exampleCopy.MouseLeave:Connect(function()
+			tService:Create(exampleCopy.Hover, TweenInfo.new(.2, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
+		end)
+
+		lastClicked["ClipBoard"][currentNumber] = 0
+		lastClicked["Teleport"][currentNumber] = 0
+		index[v.PlaceId] = currentNumber
+		
+		if getrenv().GameInfos then
+			gameDataStore[currentNumber] = {}
+			local currentDataStore = gameDataStore[currentNumber]
+			local data = getPlaceDetails(v.PlaceId)
+			currentDataStore["Name"] = v.Name
+			currentDataStore["Data"] = data 
+			currentDataStore["LastUpdate"] = tick()
+			
+			exampleCopy.MouseEnter:Connect(function()
+			    left = false
+				frameInfoHandler.Visible = true 
+				titleInfoOverHead.Text = "<b>".. currentDataStore["Name"] .."</b>"
+				task.spawn(spawn,function()
+					if particlesEnabled then 
+						for i = 1, particleAmount*2 do 
+							local image = newParticle(uiColor)
+
+							if image then 
+								image.Parent = frameInfoHandler
+								image.Position = UDim2.new(math.random(0,1000)/1000,0,1,0)
+
+								particleModule.createParticle(
+									image,
+									100, 
+									UDim2.new(math.random(-1,1)/1000,0,.0005,0),
+									math.random(-5,-5), 
+									UDim2.new(0,0,0.0002,0),
+									UDim2.new(-0.001,0,-0.001,0),
+									0.01,
+									0,
+									frameInfoHandler
+								)
+							end
+						end
+					end
+				end)
+				if currentDataStore["Data"] then 
+					local isGroup = (data.BuilderAbsoluteUrl:match("groups") == "groups")
+					
+					playerDescription.Text = "<b><font color = 'rgb("..stringColor..")'>Username: </font></b>".. data.Builder .."\n<b><font color = 'rgb("..stringColor..")'>UserID: </font></b>".. tostring(data.BuilderId) .."\n<b><font color = 'rgb("..stringColor..")'>Group: </font></b>".. tostring(isGroup)
+					gameDescription.Text = "<b><font color = 'rgb("..stringColor..")'>Description: </font></b>\"".. data.Description .. "\"\n<b><font color = 'rgb("..stringColor..")'>Created: </font></b>".. data.Created .."\n<b><font color = 'rgb("..stringColor..")'>Updated: </font></b>".. data.Updated .."\n<b><font color = 'rgb("..stringColor..")'>Favorites: </font></b>".. tostring(data.FavoritedCount) .."\n<b><font color = 'rgb("..stringColor..")'>Visits: </font></b>".. tostring(data.VisitedCount) .."\n<b><font color = 'rgb("..stringColor..")'>Online: </font></b>".. tostring(data.OnlineCount)
+					
+					if isGroup then 
+						playerImage.Image = getGroupInfos(data.BuilderId).EmblemUrl
+					else 
+						playerImage.Image = game.Players:GetUserThumbnailAsync(data.BuilderId, "HeadShot", "Size60x60")
+					end
+				end
+			end)
+		
+			exampleCopy.MouseLeave:Connect(function()
+				left = true
+				delay(.5, function()
+				    if left then 
+				        frameInfoHandler.Visible = false
+				    end 
+				end)
+			end)
+		end
+		
+		exampleCopy.Button.MouseButton1Click:Connect(function()
+			if getrenv().MobileFix then 
+				print(v.PlaceId)
+			end
+			task.spawn(spawn,function()
+				if particlesEnabled then 
+					for i = 1, particleAmount do 
+						local image = newParticle(colors.DarkGrey)
+
+						if image then 
+							image.Position = UDim2.new(math.random(0,1000)/1000,0,1.05,0)
+
+							particleModule.createParticle(
+								image,
+								50, 
+								UDim2.new(math.random(-1,1)/1000,0,.0005,0),
+								math.random(-5,-5), 
+								UDim2.new(0,0,0.002,0),
+								UDim2.new(-0.001,0,-0.001,0),
+								0.01,
+								0,
+								exampleCopy.Button
+							)
+						end
+					end
+				end
+			end)
+			if not isTeleporting then 
+				lastClicked["Teleport"][currentNumber] = tick()
+				isTeleporting = true
+				pcall(function()
+					tpService:Teleport(v.PlaceId, game.Players.LocalPlayer)
+				end)
+				repeat task.wait()
+					exampleCopy.Button.Text = currentText[currentNumber] .. "<font color = 'rgb("..stringColor..")'> ← [".. math.floor((tick()-lastClicked["Teleport"][currentNumber])*10 )/10 .."]</font>"
+				until (tick() -lastClicked["Teleport"][currentNumber]) >= teleportAbortDelay or teleportFailure[v.PlaceId]
+				if teleportFailure[v.PlaceId] then 
+					exampleCopy.Button.Text = oldNames[currentNumber]
+					teleportFailure[currentNumber] = nil
+				end
+				isTeleporting = false 
+			end
+		end)
+
+		exampleCopy.Button.MouseButton2Click:Connect(function()
+			setclipboard(v.PlaceId)
+			exampleCopy.Button.Text = "<font color = 'rgb("..stringColor..")'>".. v.PlaceId .."</font>"
+			currentText[currentNumber] = "<font color = 'rgb("..stringColor..")'>".. v.PlaceId .."</font>"
+			lastClicked["ClipBoard"][currentNumber] = tick()
+			task.spawn(spawn,function()
+				if particlesEnabled then 
+					for i = 1, particleAmount do 
+						local image = newParticle(uiColor)
+						
+						if image then 
+							image.Parent = exampleCopy.Button
+							image.Position = UDim2.new(math.random(0,1000)/1000,0,1.05,0)
+							
+							particleModule.createParticle(
+								image,
+								50, 
+								UDim2.new(math.random(-1,1)/1000,0,.0005,0),
+								math.random(-5,-5), 
+								UDim2.new(0,0,0.002,0),
+								UDim2.new(-0.001,0,-0.001,0),
+								0.01,
+								0,
+								exampleCopy.Button
+							)
+						end
+					end
+				end
+			end)
+			delay(1.5, function()
+				if (tick() - lastClicked["ClipBoard"][currentNumber]) >= 1.4 then
+					exampleCopy.Button.Text = oldNames[currentNumber]
+					currentText[currentNumber] = oldNames[currentNumber]
+				end
+			end)
+		end)
+	end
+	if pages.IsFinished then 
+
+		break
+	end
+	pages:AdvanceToNextPageAsync()
+	addedValue = addedValue + 50
+end
+
+scGui.Enabled = true
+
+-- Other Events
+frameListBackground.MouseEnter:Connect(function()
+	tService:Create(frameListBackground, TweenInfo.new(.185, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundTransparency = 0}):Play()
+end)
+frameListBackground.MouseLeave:Connect(function()
+	tService:Create(frameListBackground, TweenInfo.new(.185, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.4}):Play()
+end)
+
+closeFrame.MouseEnter:Connect(function()
+	tService:Create(closeButton, TweenInfo.new(.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Position = UDim2.new(.85,0,0,0), Rotation = 0, TextTransparency = 0}):Play()
+end)
+closeFrame.MouseLeave:Connect(function()
+	tService:Create(closeButton, TweenInfo.new(.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Position = UDim2.new(.65,0,0,0), Rotation = 90*3, TextTransparency = 1}):Play()
+end)
+closeButton.MouseButton1Click:Connect(function()
+	getrenv().ScreenGui:Destroy()
+	getrenv().ScreenGui = nil 
+	getrenv().UniverseViewerDestroy = nil
+	getrenv().UniverseViewerExecuted = false
+end)
+
+-- Hooks 
+tpService.TeleportInitFailed:Connect(function(player, result, err, place)
+	teleportFailure[place] = true
+end)
+
+-- Global Func 
+getrenv().UniverseViewerDestroy = function()
+	getrenv().ScreenGui:Destroy()
+	getrenv().ScreenGui = nil 
+	getrenv().UniverseViewerDestroy = nil
+	getrenv().UniverseViewerExecuted = false
+end 
