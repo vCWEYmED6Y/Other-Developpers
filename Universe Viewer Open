@@ -106,7 +106,7 @@ local function _print(...) 	if getrenv().Debug then  		print(...) 	end end
 local function isProperty(instance, property)	local x = pcall(function()		return instance[property]	end)		return x end
 local function isInstance(className)	local x = pcall(function()		return Instance.new(className)	end)		return x end
 local function editUi(ui, parent,values)	if  type(values) ~= "table" then _print("\"values\" has to be a table.") return end	ui.Parent = parent	for i, v in pairs (values) do 		if not isProperty(ui, i) and not table.find(i, blacklistedValues) then _print("Could not set ".. tostring(i) .. " to " .. tostring(v)) continue end				ui[i] = v	end end
-local function getPlaceDetails(placeId)	local link = "https://www.roproxy.com/places/api-get-details?assetId="..placeId	local request = hService:JSONDecode(game:HttpGetAsync(link))		return request end
+local function getPlaceDetails(placeId)	local link = `https://apis.roblox.com/universes/v1/places/{placeId}/universe`	local request = hService:JSONDecode(game:HttpGetAsync(link))		return request end
 local function getGroupInfos(groupID)	return gService:GetGroupInfoAsync(groupID) end --[[ EmblemUrl, Id, Name, Owner (table: Id, Name), Roles (table)]]
 
 -- UI Func
