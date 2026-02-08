@@ -65,7 +65,7 @@ local colors = {
 local guiParent = game.CoreGui
 local teleportAbortDelay = math.huge
 local particlesEnabled, particleAmount, particleSize = false, 20, UDim2.new(0,10,0,10) -- you don't have to edit particleAmount if particlesEnabled is set to true.
-local particleModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/vCWEYmED6Y/Other-Developpers/main/2D%20Particle%20Effect%20Module", true))()
+local particleModule = {}
 
 getrenv().GameInfos = true 
 getrenv().Debug = true 
@@ -535,7 +535,7 @@ while true do
 		end)
 
 		exampleCopy.Button.MouseButton2Click:Connect(function()
-			setclipboard(v.PlaceId)
+			setclipboard(tostring(v.PlaceId))
 			exampleCopy.Button.Text = "<font color = 'rgb("..stringColor..")'>".. v.PlaceId .."</font>"
 			currentText[currentNumber] = "<font color = 'rgb("..stringColor..")'>".. v.PlaceId .."</font>"
 			lastClicked["ClipBoard"][currentNumber] = tick()
